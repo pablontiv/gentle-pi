@@ -55,4 +55,4 @@ Hard delegation triggers:
 - **Incident rule**: after wrong cwd, accidental worktree/repo mutation, merge recovery, confusing test command, or environment workaround, run fresh audit.
 - **Long-session rule**: after roughly 20 tool calls, 5 exploratory reads, or 2 non-mechanical edits with no delegation and accumulating complexity, pause and choose a subagent or justify not doing so.
 
-The package auto-installs SDD agents and chains into the project when a Pi session starts. Use `/gentle-ai:install-sdd --force` only for recovery or intentional overwrite.
+The package ensures SDD agents and chains are available as global Pi runtime assets. Project-local SDD files are overrides/debug copies only. Use `/gentle-ai:install-sdd --force` only for recovery or intentional global refresh.

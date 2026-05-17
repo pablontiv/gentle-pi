@@ -82,7 +82,7 @@ Then start Pi in a project:
 pi
 ```
 
-`gentle-pi` waits until the first SDD flow in a session, then runs a one-time SDD preflight and installs local SDD assets without overwriting your edits. Slash SDD commands trigger this automatically; for natural-language requests, el Gentleman decides when SDD is needed and runs the explicit preflight first.
+`gentle-pi` provides SDD agents as global Pi runtime assets, not per-project setup. The first SDD flow in a session still runs a one-time SDD preflight for preferences; for natural-language requests, el Gentleman decides when SDD is needed and runs the explicit preflight first.
 
 ## Quick start
 
@@ -213,13 +213,12 @@ Engram-only mode is different by design: Engram is working memory and does not m
 
 ## SDD preflight and project files
 
-`gentle-pi` does not interrupt every new session. Slash SDD flows such as `/sdd-*`, `/sdd-init`, and the explicit `/gentle-ai:sdd-preflight` command run a lazy preflight, ask for session-scoped SDD preferences, and then copy these assets if they are missing. For natural-language requests, the parent agent decides whether the work should use SDD and must run/reuse `/gentle-ai:sdd-preflight` before continuing.
+`gentle-pi` does not require SDD agents to be copied into every project. The package ensures global Pi SDD assets exist under the Pi agent home and treats project-local files only as overrides/debug copies. Slash SDD flows such as `/sdd-*`, `/sdd-init`, and the explicit `/gentle-ai:sdd-preflight` command run a lazy preflight and ask for session-scoped SDD preferences. For natural-language requests, the parent agent decides whether the work should use SDD and must run/reuse `/gentle-ai:sdd-preflight` before continuing.
 
 ```text
-.pi/agents/sdd-*.md
-.pi/chains/sdd-*.chain.md
-.pi/gentle-ai/support/strict-tdd.md
-.pi/gentle-ai/support/strict-tdd-verify.md
+~/.pi/agent/agents/sdd-*.md
+~/.pi/agent/chains/sdd-*.chain.md
+~/.pi/agent/gentle-ai/support/strict-tdd*.md
 ```
 
 The preflight choices are reused for later SDD flows in the same session:
@@ -229,7 +228,7 @@ The preflight choices are reused for later SDD flows in the same session:
 - PR chaining strategy: `auto-forecast`, `ask-always`, `single-pr-default`, or `force-chained`;
 - review budget line threshold.
 
-It does **not** overwrite existing files unless you explicitly run:
+It does **not** overwrite existing global assets unless you explicitly run:
 
 ```text
 /gentle-ai:install-sdd --force
@@ -378,8 +377,8 @@ Legacy string entries are still accepted and treated as `model`-only config.
 | `/gentle:models`                 | Opens global model + effort assignment UI.                          |
 | `/gentle:persona`                | Switches persona mode.                                              |
 | `/sdd-init`                      | Initializes or refreshes `openspec/config.yaml`.                    |
-| `/gentle-ai:install-sdd`         | Reinstalls SDD assets without overwriting local files.              |
-| `/gentle-ai:install-sdd --force` | Force-refreshes installed SDD assets.                               |
+| `/gentle-ai:install-sdd`         | Repairs missing global SDD runtime assets without overwriting files. |
+| `/gentle-ai:install-sdd --force` | Force-refreshes installed global SDD assets.                         |
 | `/skill-registry:refresh`        | Regenerates `.atl/skill-registry.md`.                               |
 
 Startup flag:
@@ -433,13 +432,13 @@ Memory contract for SDD delegation:
 
 | Path                           | Purpose                                                                                                    |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `extensions/gentle-ai.ts`      | Injects identity, installs assets, registers commands, applies model config, and protects shell execution. |
+| `extensions/gentle-ai.ts`      | Injects identity, ensures global SDD assets, registers commands, applies model config, and protects shell execution. |
 | `extensions/startup-banner.ts` | Shows the rose startup intro, compact runtime panel, and collaboration credit.                             |
 | `extensions/sdd-init.ts`       | Registers `/sdd-init` for OpenSpec initialization.                                                         |
 | `extensions/skill-registry.ts` | Maintains `.atl/skill-registry.md` from project/user skills.                                               |
 | `assets/orchestrator.md`       | Parent-session orchestration contract.                                                                     |
-| `assets/agents/`               | SDD agents copied into `.pi/agents/`.                                                                      |
-| `assets/chains/`               | SDD chains copied into `.pi/chains/`.                                                                      |
+| `assets/agents/`               | SDD agents installed as global Pi runtime assets.                                                          |
+| `assets/chains/`               | SDD chains installed as global Pi runtime assets.                                                          |
 | `assets/support/`              | Strict TDD support docs for apply/verify phases.                                                           |
 | `skills/`                      | Gentle AI delivery and collaboration skills.                                                               |
 | `prompts/`                     | Gentle-prefixed prompt templates.                                                                          |

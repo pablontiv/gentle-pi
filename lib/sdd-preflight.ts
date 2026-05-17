@@ -1,10 +1,15 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 const PACKAGE_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const ASSETS_DIR = join(PACKAGE_ROOT, "assets");
+
+function gentlePiAgentHome(): string {
+	return process.env.GENTLE_PI_AGENT_HOME ?? join(homedir(), ".pi", "agent");
+}
 
 export type SddExecutionMode = "interactive" | "auto";
 export type SddArtifactStore = "openspec" | "engram" | "both";
@@ -89,22 +94,23 @@ function copyDirectoryFiles(
 }
 
 export function installSddAssets(
-	cwd: string,
+	_cwd: string,
 	force: boolean,
 ): { agents: number; chains: number; support: number; skipped: number } {
+	const agentHome = gentlePiAgentHome();
 	const agents = copyDirectoryFiles(
 		join(ASSETS_DIR, "agents"),
-		join(cwd, ".pi", "agents"),
+		join(agentHome, "agents"),
 		force,
 	);
 	const chains = copyDirectoryFiles(
 		join(ASSETS_DIR, "chains"),
-		join(cwd, ".pi", "chains"),
+		join(agentHome, "chains"),
 		force,
 	);
 	const support = copyDirectoryFiles(
 		join(ASSETS_DIR, "support"),
-		join(cwd, ".pi", "gentle-ai", "support"),
+		join(agentHome, "gentle-ai", "support"),
 		force,
 	);
 	return {
@@ -248,7 +254,7 @@ export async function ensureSddPreflight(
 					`Artifacts: ${prefs.artifactStore}`,
 					`PR chaining: ${prefs.chainedPrStrategy}`,
 					`Review budget: ${prefs.reviewBudgetLines} changed lines`,
-					`Assets installed: ${result.agents} agent(s), ${result.chains} chain(s), ${result.support} support file(s), ${result.skipped} skipped.`,
+					`Global SDD assets ready: ${result.agents} agent(s), ${result.chains} chain(s), ${result.support} support file(s), ${result.skipped} already present.`,
 					modelRoutingLine,
 				].join("\n"),
 				modelResult.invalidPath ? "warning" : "info",

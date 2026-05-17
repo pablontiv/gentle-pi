@@ -138,7 +138,9 @@ async function loadExtensions(pi) {
 
 async function run() {
 	const globalConfigHome = await tempWorkspace();
+	const globalAgentHome = await tempWorkspace();
 	process.env.GENTLE_PI_CONFIG_HOME = globalConfigHome;
+	process.env.GENTLE_PI_AGENT_HOME = globalAgentHome;
 	const globalModelsPath = join(globalConfigHome, "models.json");
 	const { pi, hooks, commands, flags } = createPi();
 	await loadExtensions(pi);
@@ -196,13 +198,15 @@ async function run() {
 		assert.equal(
 			existsSync(join(noUiCwd, ".pi", "agents", "sdd-apply.md")),
 			false,
-			"session_start must not install SDD agents before first SDD intent",
+			"session_start must not install project-local SDD agents",
 		);
 		assert.equal(
 			existsSync(join(noUiCwd, ".pi", "chains", "sdd-full.chain.md")),
 			false,
-			"session_start must not install SDD chains before first SDD intent",
+			"session_start must not install project-local SDD chains",
 		);
+		assert.equal(existsSync(join(globalAgentHome, "agents", "sdd-apply.md")), true);
+		assert.equal(existsSync(join(globalAgentHome, "chains", "sdd-full.chain.md")), true);
 	} finally {
 		await rm(noUiCwd, { recursive: true, force: true });
 	}
@@ -287,15 +291,14 @@ async function run() {
 			await inputHook({ text: "/sdd-plan this change", source: "interactive" }, ctx),
 			{ action: "continue" },
 		);
-		assert.equal(existsSync(join(lazySddCwd, ".pi", "agents", "sdd-apply.md")), true);
-		assert.equal(existsSync(join(lazySddCwd, ".pi", "agents", "sdd-sync.md")), true);
-		assert.equal(existsSync(join(lazySddCwd, ".pi", "chains", "sdd-full.chain.md")), true);
-		const lazyAppliedAgent = await readFile(
-			join(lazySddCwd, ".pi", "agents", "sdd-apply.md"),
-			"utf8",
-		);
-		assert.match(lazyAppliedAgent, /model: openai\/gpt-5/);
-		assert.match(lazyAppliedAgent, /thinking: high/);
+		assert.equal(existsSync(join(lazySddCwd, ".pi", "agents", "sdd-apply.md")), false);
+		assert.equal(existsSync(join(lazySddCwd, ".pi", "chains", "sdd-full.chain.md")), false);
+		assert.equal(existsSync(join(globalAgentHome, "agents", "sdd-apply.md")), true);
+		assert.equal(existsSync(join(globalAgentHome, "agents", "sdd-sync.md")), true);
+		assert.equal(existsSync(join(globalAgentHome, "chains", "sdd-full.chain.md")), true);
+		const lazySettings = JSON.parse(await readFile(join(lazySddCwd, ".pi", "settings.json"), "utf8"));
+		assert.equal(lazySettings.subagents.agentOverrides["sdd-apply"].model, "openai/gpt-5");
+		assert.equal(lazySettings.subagents.agentOverrides["sdd-apply"].thinking, "high");
 		assert.equal(ctx.ui.selections.length, 3);
 		assert.deepEqual(ctx.ui.selections[1].options, ["openspec"]);
 		assert.match(ctx.ui.notifications.at(-1).message, /SDD preflight complete/);
@@ -315,7 +318,8 @@ async function run() {
 	try {
 		const ctx = createCtx(commandSddCwd, true, "command-session");
 		await commands.get("gentle-ai:sdd-preflight").handler("", ctx);
-		assert.equal(existsSync(join(commandSddCwd, ".pi", "agents", "sdd-apply.md")), true);
+		assert.equal(existsSync(join(commandSddCwd, ".pi", "agents", "sdd-apply.md")), false);
+		assert.equal(existsSync(join(globalAgentHome, "agents", "sdd-apply.md")), true);
 		assert.equal(ctx.ui.selections.length, 3);
 		await commands.get("gentle:sdd-preflight").handler("", ctx);
 		assert.equal(ctx.ui.selections.length, 3, "manual preflight command should reuse session choices");
@@ -333,8 +337,10 @@ async function run() {
 			},
 			ctx,
 		);
-		assert.equal(existsSync(join(sddAgentGuardCwd, ".pi", "agents", "sdd-apply.md")), true);
-		assert.equal(existsSync(join(sddAgentGuardCwd, ".pi", "chains", "sdd-full.chain.md")), true);
+		assert.equal(existsSync(join(sddAgentGuardCwd, ".pi", "agents", "sdd-apply.md")), false);
+		assert.equal(existsSync(join(sddAgentGuardCwd, ".pi", "chains", "sdd-full.chain.md")), false);
+		assert.equal(existsSync(join(globalAgentHome, "agents", "sdd-apply.md")), true);
+		assert.equal(existsSync(join(globalAgentHome, "chains", "sdd-full.chain.md")), true);
 		assert.equal(ctx.ui.selections.length, 3);
 		assert.match(promptResult.systemPrompt, /SDD Session Preflight/);
 		assert.match(ctx.ui.notifications.at(-1).message, /SDD preflight complete/);
@@ -379,7 +385,9 @@ async function run() {
 	try {
 		const ctx = createCtx(installCwd, true);
 		await commands.get("gentle-ai:install-sdd").handler("", ctx);
-		assert.match(ctx.ui.notifications.at(-1).message, /SDD assets installed/);
+		assert.match(ctx.ui.notifications.at(-1).message, /Global Gentle AI SDD assets installed/);
+		assert.equal(existsSync(join(installCwd, ".pi", "agents", "sdd-apply.md")), false);
+		assert.equal(existsSync(join(globalAgentHome, "agents", "sdd-apply.md")), true);
 	} finally {
 		await rm(installCwd, { recursive: true, force: true });
 	}
@@ -393,7 +401,7 @@ async function run() {
 		await writeFile(join(staleAssetsCwd, ".pi", "chains", "sdd-full.chain.md"), "stale chain\n");
 		const ctx = createCtx(staleAssetsCwd, true);
 		await commands.get("gentle-ai:status").handler("", ctx);
-		assert.match(ctx.ui.notifications.at(-1).message, /SDD assets stale: \d+ file\(s\)/);
+		assert.match(ctx.ui.notifications.at(-1).message, /Project-local SDD override drift: \d+ file\(s\)/);
 		assert.match(ctx.ui.notifications.at(-1).message, /gentle-ai:install-sdd --force/);
 	} finally {
 		await rm(staleAssetsCwd, { recursive: true, force: true });
@@ -403,9 +411,11 @@ async function run() {
 	try {
 		const ctx = createCtx(sddCwd, true);
 		await commands.get("sdd-init").handler("", ctx);
-		assert.equal(existsSync(join(sddCwd, ".pi", "agents", "sdd-apply.md")), true);
-		assert.equal(existsSync(join(sddCwd, ".pi", "agents", "sdd-sync.md")), true);
-		assert.equal(existsSync(join(sddCwd, ".pi", "chains", "sdd-full.chain.md")), true);
+		assert.equal(existsSync(join(sddCwd, ".pi", "agents", "sdd-apply.md")), false);
+		assert.equal(existsSync(join(sddCwd, ".pi", "chains", "sdd-full.chain.md")), false);
+		assert.equal(existsSync(join(globalAgentHome, "agents", "sdd-apply.md")), true);
+		assert.equal(existsSync(join(globalAgentHome, "agents", "sdd-sync.md")), true);
+		assert.equal(existsSync(join(globalAgentHome, "chains", "sdd-full.chain.md")), true);
 		assert.equal(ctx.ui.selections.length, 3);
 		assert.match(ctx.ui.notifications[0].message, /SDD preflight complete/);
 		assert.match(ctx.ui.notifications.at(-1).message, /Wrote openspec\/config\.yaml/);

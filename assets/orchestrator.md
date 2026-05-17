@@ -188,11 +188,11 @@ The preflight captures:
 - chained PR strategy: `auto-forecast`, `ask-always`, `single-pr-default`, or `force-chained`;
 - review budget in changed lines.
 
-During that lazy preflight, the package should ensure SDD assets are present for `pi-subagents` without the user needing to remember setup commands. If assets are missing, install them non-destructively into:
+The package should ensure SDD assets are present as global Pi runtime assets without the user needing to remember per-project setup commands. If assets are missing, install them non-destructively into:
 
 ```text
-.pi/agents/sdd-*.md
-.pi/chains/sdd-*.chain.md
+~/.pi/agent/agents/sdd-*.md
+~/.pi/agent/chains/sdd-*.chain.md
 ```
 
 Manual install commands are recovery/debug paths, not the happy path. `/gentle-ai:sdd-preflight` and `/gentle:sdd-preflight` are the explicit preflight commands for agent/orchestrator use. If the user explicitly changes SDD preferences later in the same session, follow the new instruction.

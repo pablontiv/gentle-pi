@@ -32,14 +32,14 @@ Run required focused and full verification commands when available. Report comma
 
 If strict TDD is active in `openspec/config.yaml`, parent prompt, or `apply-progress.md`:
 
-1. Read `.pi/gentle-ai/support/strict-tdd-verify.md` if present.
+1. Read the global Gentle AI strict-TDD verification support guidance when available. If a project-local `.pi/gentle-ai/support/strict-tdd-verify.md` exists, treat it as an override.
 2. Verify `apply-progress.md` contains a `TDD Cycle Evidence` table.
 3. Cross-reference reported test files against the actual codebase.
 4. Run the relevant tests and confirm GREEN is still true.
 5. Audit assertion quality in changed/created tests: no tautologies, ghost loops, type-only assertions alone, smoke-only tests, or implementation-detail CSS assertions.
 6. Flag missing or incomplete TDD evidence as CRITICAL.
 
-If strict TDD is active and `.pi/gentle-ai/support/strict-tdd-verify.md` is missing, perform the checks above and report the missing support file as a risk. Do not skip TDD compliance.
+If strict TDD is active and no external support file is available, perform the checks above. Do not skip TDD compliance.
 
 ## Review Workload Verification
 
