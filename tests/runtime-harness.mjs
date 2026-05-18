@@ -179,6 +179,18 @@ async function run() {
 		assert.match(promptResult.systemPrompt, /el Gentleman/);
 		assert.match(promptResult.systemPrompt, /openspec\/config\.yaml.*not session preflight/s);
 		assert.match(promptResult.systemPrompt, /Do not mark SDD preflight complete/);
+		await mkdir(join(promptCwd, ".pi", "gentle-ai"), { recursive: true });
+		await writeFile(
+			join(promptCwd, ".pi", "gentle-ai", "persona.json"),
+			'{"mode":"neutral"}\n',
+		);
+		const neutralPromptResult = await promptHook({ systemPrompt: "base" }, createCtx(promptCwd));
+		assert.match(neutralPromptResult.systemPrompt, /Do not use slang or regional expressions/);
+		assert.doesNotMatch(
+			neutralPromptResult.systemPrompt,
+			/When the user writes Spanish, answer in natural Rioplatense Spanish with voseo/,
+			"neutral persona prompt must not include unconditional voseo instructions after reload",
+		);
 		const subagentPromptResult = await promptHook(
 			{ agentName: "worker", systemPrompt: "worker base" },
 			createCtx(promptCwd),
