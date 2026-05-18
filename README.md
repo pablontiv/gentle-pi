@@ -462,11 +462,16 @@ node --experimental-strip-types --check extensions/startup-banner.ts
 npm pack --dry-run
 ```
 
-Publish:
+Publish npm through GitHub Actions only:
 
 ```bash
-npm publish
+gh workflow run publish.yml --repo Gentleman-Programming/gentle-pi --ref main -f dist-tag=latest
+gh run watch <run-id> --repo Gentleman-Programming/gentle-pi --exit-status
+npm view gentle-pi@<version> version --registry=https://registry.npmjs.org/
+npm dist-tag ls gentle-pi --registry=https://registry.npmjs.org/
 ```
+
+Do not run `npm publish` locally for `gentle-pi`; the GitHub workflow provides provenance, environment protection, and registry credentials.
 
 ## Principles
 
